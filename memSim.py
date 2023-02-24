@@ -3,11 +3,22 @@ from collections import deque
 
 class VirtualMemory():
     
-    def __init__(self, pages) -> None:
+    def __init__(self, pages, algo, num_fram, addresses) -> None:
         self.pages = pages
         self.tlb = FIFO(pages)
         self.page_table = None
-    
+        #list of address from the file
+        self.addresses = addresses
+        
+        if algo == "OPT":
+            ...
+        elif algo == "LRU":
+            ...
+        else:
+            self.page_table = FIFO(num_fram)
+        
+        
+
     def lookup(self, algo):
         if algo == 'FIFO':
             self.page_table = FIFO(self.pages, 256)
@@ -23,8 +34,39 @@ class FIFO():
         self.entries = entries
         self.pages = pages
         self.frames = deque(maxlen=entries)
-        self.pages_in_memory = set()
+        self.pages_in_memory = dict()
+    
+    
+    def pop(self, key):
+        self.pages_in_memory.pop(key)
+        self.pages.remove(key)
+    
+    # return the page number if it's in the list
+    # else return None
+    def getVal(self, page_number):
+        for page in self.pages:
+            if page == page_number:
+                return page
+            return None
+    
+    # given the page_number and the value,
+    #if the page number in the set of pages_in_memory
+    # remove the page
+    # then append the page_number to pages
+    # add the value at the index page number to 
+    def setVal(self, page_number, newVal):        
+        if page_number in self.pages_in_memory:
+            self.pages.remove(page_number)
+        self.pages_in_memory[page_number] = newVal
+        self.pages.append(page_number)
         
+        if(len(self.pages) > self.entries):
+            del self.pages_in_memory[self.pages.pop(0)]
+        
+    # i don't think we need this since we can do it
+    # for all of the algo in the virtual memory class
+    # as we loop through
+    
     def count(self):
         page_faults = 0
         page_hits = 0
@@ -52,6 +94,11 @@ def read_backing_store(frame):
         file.seek(256*frame)
         return file.read(256)
 
+
+def cal_offset(offset):
+    if offset > 127:
+        return offset - 256
+    return offset
 # @param addr: 32-bit int representing a logical addr
 # @return page number, offset
 def mask_logical_addr(addr):
@@ -66,7 +113,8 @@ def main():
         print("No Input Detected")
         return
     
-    print(mask_logical_addr(16916))
+    pageFrame, offset =mask_logical_addr(16916)
+    
     #frames = option.frames
     #if frames < 0 or frames > 256:
         #frames = 256
