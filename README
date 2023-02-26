@@ -1,0 +1,7 @@
+Members:
+Tai Le, Wing Fung Wu
+
+To run memSim:
+./memSim <reference-sequence-file.txt> -f <FRAMES> -p <PRA>
+or
+./memSim <reference-sequence-file.txt> -p <PRA> -f <FRAMES>

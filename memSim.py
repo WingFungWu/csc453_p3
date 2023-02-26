@@ -1,5 +1,7 @@
 from optparse import OptionParser
 from typing import Optional
+import sys, filecmp
+
 # @param addr: 32-bit int representing a logical addr
 # @return page number, offset
 def mask_logical_addr(addr):
@@ -72,7 +74,7 @@ class VirtualMemory:
         return page
             
     def print_addr(self, addr, value, frame_number, entire_frame: bytes) -> None:
-        print(f"{addr}, {value}, {frame_number}, {bytes.hex(entire_frame)}")
+        print(f"{addr}, {value}, {frame_number}, {bytes.hex(entire_frame).upper()}")
     
     def print_stat(self) -> None:
         print(f"Number of Translated Addresses = {self.lookups}")
@@ -121,25 +123,7 @@ class PageTable:
         self.queue.append(frame)
         if len(self.queue) > self.size:
             del self.entries[self.queue.pop(0)]
-        '''
-        if len(self.queue) == self.size:
-            oldest_page = self.queue.pop(0)
-            self.entries[oldest_page] = None
         
-        self.queue.append(page_number)
-        self.entries[page_number] = Page(page_number, frame)
-        '''
-        
-def main():
-    virtual_addresses = [16916, 62493, 30198, 53683, 40185, 28781, 24462, 48399, 64815, 18295]
-    
-    vm = VirtualMemory()
-    for addr in virtual_addresses:
-        vm.translate_virtual_addr(addr)
-    
-    vm.print_stat()
-
-'''
 def main():
     parser = OptionParser()
     parser.add_option("-f","--frames", default=256, help="memSim frames to use: an integer <= 256 and > 0", action="store", type="int", dest="frames")
@@ -149,20 +133,25 @@ def main():
         print("No Input Detected")
         return
     
-    #pageFrame, offset =mask_logical_addr(16916)
+    frames = option.frames
+    frames = 256 if frames < 0 or frames > 256 else frames
+    expected = "addresses_output.txt"
+    out_file = "out.txt"
     
-    #frames = option.frames
-    #if frames < 0 or frames > 256:
-        #frames = 256
-    
-    print(f"Virtual address: 0x{virtual_address:02X}")
-    print(f"Page number: {page_number}")
-    print(f"Offset: {offset}")
-    print(f"Frame number: {frame}")
-    print(f"Physical address: 0x{physical_address:02X}")
-    print(f"Page fault rate: {page_table.get_page_fault_rate():.2%}")
-'''
-    
+    try:
+        with open(args[0], "r") as in_file:
+            virtual_addresses = in_file.read().split()
+            virtual_addresses = [int(addr) for addr in virtual_addresses]
+        vm = VirtualMemory()
+        with open(out_file, "w") as sys.stdout:
+            for addr in virtual_addresses:
+                vm.translate_virtual_addr(addr)
+            vm.print_stat()
+        sys.stdout = sys.__stdout__
+        assert filecmp.cmp(expected, out_file) == True
+    except FileNotFoundError:
+        print("Incorrect <reference-sequence-file.txt> Detected")
+        return
     
 if __name__ == '__main__':
     main()
