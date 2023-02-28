@@ -132,9 +132,40 @@ class LRUCache:
         self.used_list.append(frame)
         
 class OPTCache:
-    def __init__(self, size) -> None:
+    def __init__(self, size):
         self.size = size
-        self.entries = {}
+        self.entries = []
+        self.future_accesses = {}
+        
+    def refer(self, page):
+        if page not in self.entries:
+            if len(self.entries) == self.size:
+                self.replace()
+            self.entries.append(page)
+            self.future_accesses[page] = self.find_future_accesses(page)
+            
+    def find_future_accesses(self):
+        # simulate the future accesses of the page
+        # this is where the OPT algorithm is not practical to implement in reality
+        # since we cannot accurately predict the future access pattern
+        return []
+    
+    def replace(self):
+        # find the page that will not be used for the longest period of time
+        # among the current cache pages and replace it with the new page
+        max_future_accesses = -1
+        max_future_accesses_page = None
+        for page in self.entries:
+            if self.future_accesses[page] == []:
+                # if the page is not accessed in the future, we can replace it immediately
+                self.entries.remove(page)
+                del self.future_accesses[page]
+                return
+            if len(self.future_accesses[page]) > max_future_accesses:
+                max_future_accesses = len(self.future_accesses[page])
+                max_future_accesses_page = page
+        self.entries.remove(max_future_accesses_page)
+        del self.future_accesses[max_future_accesses_page]
 
 def main():
     parser = OptionParser()
