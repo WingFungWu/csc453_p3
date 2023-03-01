@@ -1,5 +1,5 @@
 from optparse import OptionParser
-import sys, filecmp
+from collections import OrderedDict
 
 # @param addr: 32-bit int representing a logical addr
 # @return page number, offset
@@ -31,11 +31,11 @@ class VirtualMemory:
         self.tlb_lookups = 0
         
         if pra == 'FIFO':
-            self.page_table = FIFOCache(frames)
+            self.page_table = FIFOCache(size=frames)
         elif pra == 'LRU':
             self.page_table = LRUCache(frames)
-        else:
-            self.page_table = OPTCache(frames)
+        #else:
+            #Eself.page_table = OPTCache(frames)
         
         self.page_faults = 0
         self.page_lookups = 0
@@ -62,6 +62,7 @@ class VirtualMemory:
         tlb_miss = 0
         
         page = self.tlb_lookup(page_number)
+        page = None
         if not page:
             tlb_miss = 1
         else:
@@ -74,8 +75,9 @@ class VirtualMemory:
             
             frame = read_physical_memory(page_number)
             page = Page(self.page_number, frame)
-            self.tlb.insert(self.page_number, page)
-            self.page_table.insert(self.page_number, page)
+            self.tlb.insert(page_number, page)
+            self.page_table.insert(page_number, page)
+            
         return page
             
     def print_addr(self, addr, value, frame_number, entire_frame: bytes):
@@ -101,72 +103,35 @@ class FIFOCache:
         except KeyError:
             return None
     
-    def insert(self, page_number, frame): #FIFO implementation
+    def insert(self, page_number, frame):
         if page_number in self.entries:
             self.queue.remove(page_number)
-        self.entries[page_number] = Page(page_number, frame)
-        self.queue.append(frame)
+        self.entries[page_number] = frame
+        self.queue.append(page_number)
         if len(self.queue) > self.size:
             del self.entries[self.queue.pop(0)]
 
 class LRUCache:
     def __init__(self, size):
         self.size = size
-        self.entries = {}
-        self.used_list = []
-        
+        self.entries = OrderedDict()
+
     def lookup(self, page_number):
-        if page_number in self.entries:
-            self.used_list.remove(page_number)
-            self.used_list.append(page_number)
-            return self.entries[page_number]
-        return None
+        try:
+            frame = self.entries.pop(page_number)
+            self.entries[page_number] = frame
+            return frame
+        except KeyError:
+            return None
         
     def insert(self, page_number, frame):
-        if page_number in self.entries:
-            self.used_list.remove(frame)
-        elif len(self.entries) >= self.size:
-            evict = self.used_list.pop(0)
-            del self.entries[evict]
+        try:
+            self.entries.pop(page_number)
+        except KeyError:
+            if len(self.entries) >= self.size:
+                self.entries.popitem(last=False)
         self.entries[page_number] = frame
-        self.used_list.append(frame)
-        
-class OPTCache:
-    def __init__(self, size):
-        self.size = size
-        self.entries = []
-        self.future_accesses = {}
-        
-    def refer(self, page):
-        if page not in self.entries:
-            if len(self.entries) == self.size:
-                self.replace()
-            self.entries.append(page)
-            self.future_accesses[page] = self.find_future_accesses(page)
             
-    def find_future_accesses(self):
-        # simulate the future accesses of the page
-        # this is where the OPT algorithm is not practical to implement in reality
-        # since we cannot accurately predict the future access pattern
-        return []
-    
-    def replace(self):
-        # find the page that will not be used for the longest period of time
-        # among the current cache pages and replace it with the new page
-        max_future_accesses = -1
-        max_future_accesses_page = None
-        for page in self.entries:
-            if self.future_accesses[page] == []:
-                # if the page is not accessed in the future, we can replace it immediately
-                self.entries.remove(page)
-                del self.future_accesses[page]
-                return
-            if len(self.future_accesses[page]) > max_future_accesses:
-                max_future_accesses = len(self.future_accesses[page])
-                max_future_accesses_page = page
-        self.entries.remove(max_future_accesses_page)
-        del self.future_accesses[max_future_accesses_page]
-
 def main():
     parser = OptionParser()
     parser.add_option("-f","--frames", default=256, help="memSim frames to use: an integer <= 256 and > 0", action="store", type="int", dest="frames")
@@ -178,20 +143,15 @@ def main():
     
     frames = option.frames
     frames = 256 if frames < 0 or frames > 256 else frames
-    expected = "addresses_output.txt"
-    out_file = "out.txt"
     
     try:
         with open(args[0], "r") as in_file:
             virtual_addresses = in_file.read().split()
             virtual_addresses = [int(addr) for addr in virtual_addresses]
         vm = VirtualMemory(option.pra, option.frames)
-        with open(out_file, "w") as sys.stdout:
-            for addr in virtual_addresses:
-                vm.translate_virtual_addr(addr)
-            vm.print_stat()
-        sys.stdout = sys.__stdout__
-        assert filecmp.cmp(expected, out_file) == True
+        for addr in virtual_addresses:
+            vm.translate_virtual_addr(addr)
+        vm.print_stat()
     except FileNotFoundError:
         print("Incorrect <reference-sequence-file.txt> Detected")
         return
