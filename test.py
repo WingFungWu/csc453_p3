@@ -1,4 +1,4 @@
-import memSim, sys, filecmp
+import memSim2, sys, filecmp
 from optparse import OptionParser
 from random import randint
 
@@ -26,7 +26,8 @@ def main():
         with open(args[0], "r") as in_file:
             virtual_addresses = in_file.read().split()
             virtual_addresses = [int(addr) for addr in virtual_addresses]
-        vm = memSim.VirtualMemory(option.pra, option.frames)
+        future_accesses = {virtual_addresses[i]: i for i in range(len(virtual_addresses))}
+        vm = memSim2.VirtualMemory(option.pra, option.frames, future_accesses)
         if option.pra == 'FIFO':
             out_file = "out_fifo.txt"
         elif option.pra == 'LRU':
