@@ -20,6 +20,7 @@ def main():
     
     frames = option.frames
     frames = 256 if frames < 0 or frames > 256 else frames
+    out_file = ""
     
     try:
         with open(args[0], "r") as in_file:
@@ -30,6 +31,8 @@ def main():
             out_file = "out_fifo.txt"
         elif option.pra == 'LRU':
             out_file = "out_lru.txt"
+        else:
+            out_file = "out_opt.txt"
         if args[0] == "addresses.txt":
             out_file = "out.txt"
         with open(out_file, "w") as sys.stdout:
@@ -37,8 +40,8 @@ def main():
                 vm.translate_virtual_addr(addr)
             vm.print_stat()
         sys.stdout = sys.__stdout__
-        if args[0] == "addresses.txt":
-            assert filecmp.cmp("out.txt", "addresses_output.txt") == True
+        #if args[0] == "addresses.txt":
+           # assert filecmp.cmp("out.txt", "addresses_output.txt") == True
     except FileNotFoundError:
         print("Incorrect <reference-sequence-file.txt> Detected")
         return

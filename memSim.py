@@ -34,8 +34,8 @@ class VirtualMemory:
             self.page_table = FIFOCache(size=frames)
         elif pra == 'LRU':
             self.page_table = LRUCache(frames)
-        #else:
-            #Eself.page_table = OPTCache(frames)
+        else:
+            self.page_table = OPTCache(frames)
         
         self.page_faults = 0
         self.page_lookups = 0
@@ -62,7 +62,6 @@ class VirtualMemory:
         tlb_miss = 0
         
         page = self.tlb_lookup(page_number)
-        page = None
         if not page:
             tlb_miss = 1
         else:
@@ -111,27 +110,54 @@ class FIFOCache:
         if len(self.queue) > self.size:
             del self.entries[self.queue.pop(0)]
 
+ 
 class LRUCache:
     def __init__(self, size):
         self.size = size
         self.entries = OrderedDict()
 
     def lookup(self, page_number):
-        try:
-            frame = self.entries.pop(page_number)
-            self.entries[page_number] = frame
-            return frame
-        except KeyError:
+        if page_number not in self.entries:
             return None
+        self.entries.move_to_end(page_number)
+        return self.entries[page_number]
         
     def insert(self, page_number, frame):
-        try:
-            self.entries.pop(page_number)
-        except KeyError:
-            if len(self.entries) >= self.size:
+        if page_number in self.entries:
+            self.entries[page_number] = frame
+            self.entries.move_to_end(frame)
+        else:
+            self.entries[page_number] = frame
+            if len(self.entries) > self.size:
                 self.entries.popitem(last=False)
-        self.entries[page_number] = frame
             
+class OPTCache:
+    def __init__(self, size):
+        self.entries = {}
+        self.future_references = []
+        self.size = size
+    
+    def lookup(self, page_number):
+        if page_number in self.entries:
+            self.future_references.remove(page_number)
+            self.future_references.append(page_number)
+            return self.entries[page_number]
+        else:
+            return None
+    
+    def insert(self, page_number, frame):
+        if len(self.entries) >= self.size:
+            pages_to_remove = []
+            for page in self.entries:
+                if page not in self.future_references:
+                    pages_to_remove.append(page)
+            if not pages_to_remove:
+                pages_to_remove.append(self.future_references[0])
+            for page in pages_to_remove:
+                del self.entries[page]
+        self.entries[page_number] = frame
+        self.future_references.append(page_number)
+    
 def main():
     parser = OptionParser()
     parser.add_option("-f","--frames", default=256, help="memSim frames to use: an integer <= 256 and > 0", action="store", type="int", dest="frames")

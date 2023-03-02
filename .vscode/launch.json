@@ -12,9 +12,9 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            //"args": ["addresses.txt"]
-            //"args": ["addrs.txt", "-f", "256", "-p", "FIFO", "-w", "1"]
-            "args": ["addrs.txt", "-f", "256", "-p", "LRU", "-w", "0"]
+            "args": ["addresses.txt", "-f", "4", "-p", "FIFO"]
+            //"args": ["addrs.txt", "-f", "256", "-p", "LRU", "-w", "0"]
+            //"args": ["addrs.txt", "-f", "256", "-p", "LRU", "-w", "1"]
         }
     ]
 }
