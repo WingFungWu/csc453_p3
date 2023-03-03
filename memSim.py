@@ -1,13 +1,15 @@
 from optparse import OptionParser
 from collections import deque
 from typing import Optional
+import random
+import sys
 
 def mask_logical_addr(addr: int):
     return (addr >> 8), (addr & 0xff)
 
-def get_byte_referenced(frame: bytes, offset: int):
-    byte_referenced = -(256-frame[offset]) if frame[offset] >= 128 else frame[offset]
-    return byte_referenced
+# def get_byte_referenced(frame: bytes, offset: int):
+#     byte_referenced = -(256-frame[offset]) if frame[offset] >= 128 else frame[offset]
+#     return byte_referenced
 
 def read_physical_memory(frame_num: int, frame_size=256):
     with open("BACKING_STORE.bin", "rb") as file:
@@ -42,6 +44,30 @@ class FIFOCache:
         self.cache[key] = value
         self.queue.append(key)
 
+class RDCache:
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.cache = {}
+        self.queue = [] 
+        
+    def get(self, key) -> Optional[Page]:
+        if key in self.cache:
+            self.queue.remove(key)
+            self.queue.append(key)
+            return self.cache[key]
+        else:
+            return None
+    
+    def put(self, key, value):
+        if key in self.cache:
+            self.queue.remove(key)
+        elif len(self.cache) == self.capacity:
+            ranNum = random.randint(0, self.capacity-1)
+            old = self.queue.pop(ranNum)
+            del self.cache[old]
+        self.cache[key] = value
+        self.queue.append(key)
+
 class LRUCache:
     def __init__(self, capacity: int):
         self.capacity = capacity
@@ -55,7 +81,7 @@ class LRUCache:
             return self.cache[key]
         else:
             return None
-
+    
     def put(self, key, value):
         if len(self.cache) == self.capacity and key not in self.cache:
             evicted_key = self.queue.pop(0)
@@ -111,6 +137,8 @@ class VirtualMemory:
             self.page_table = LRUCache(frames)
         elif pra == "OPT":
             self.page_table = OPTCache(frames, future_accesses)
+        elif pra == "RD":
+            self.page_table = RDCache(frames)
         
         self.page_faults = 0
         self.page_lookups = 0
@@ -120,7 +148,7 @@ class VirtualMemory:
         self.lookups += 1
         page_number, offset = mask_logical_addr(logical_addr)
         page = self.page_table_lookup(page_number)
-        byte_referenced = get_byte_referenced(page.frame, offset)
+        byte_referenced = -(256-page.frame[offset]) if page.frame[offset] >= 128 else page.frame[offset]
         self.print_addr(logical_addr, byte_referenced, page.page_number, page.frame)
         
     def tlb_lookup(self, page_number: int):
@@ -161,7 +189,7 @@ class VirtualMemory:
 def main():
     parser = OptionParser()
     parser.add_option("-f","--frames", default=256, help="memSim frames to use: an integer <= 256 and > 0", action="store", type="int", dest="frames")
-    parser.add_option("-p","--PRA", default="FIFO", help="memSim page replacement algorithms to use: FIFO, LRU, OPT", action="store", type="string", dest="pra")
+    parser.add_option("-p","--PRA", default="FIFO", help="memSim page replacement algorithms to use: FIFO, LRU, OPT, RD", action="store", type="string", dest="pra")
     (option, args) = parser.parse_args()
     if not len(args):
         print("No Input Detected")
@@ -171,7 +199,7 @@ def main():
     frames = 256 if frames < 0 or frames > 256 else frames
     
     pra = option.pra
-    pra = "FIFO" if pra not in ["FIFO", "OPT", "LRU"] else pra
+    pra = "FIFO" if pra not in ["FIFO", "OPT", "LRU", "RD"] else pra
     
     try:
         with open(args[0], "r") as in_file:
