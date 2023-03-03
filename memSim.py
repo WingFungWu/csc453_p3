@@ -19,7 +19,7 @@ class Page:
         self.page_number = page_number
         self.frame = frame
 
-class FIFOCache():
+class FIFOCache:
     def __init__(self, capacity: int):
         self.capacity = capacity
         self.cache = {}
@@ -42,7 +42,7 @@ class FIFOCache():
         self.cache[key] = value
         self.queue.append(key)
 
-class LRUCache():
+class LRUCache:
     def __init__(self, capacity: int):
         self.capacity = capacity
         self.cache = {}
@@ -65,7 +65,7 @@ class LRUCache():
             self.queue.remove(key)
         self.queue.append(key)
 
-class OPTCache():
+class OPTCache:
     def __init__(self, capacity: int, future_accesses: list[int]):
         self.capacity = capacity
         self.cache = {}
