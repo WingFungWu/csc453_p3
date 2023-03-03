@@ -12,9 +12,9 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["addresses.txt", "-f", "256", "-p", "OPT"]
-            //"args": ["addrs.txt", "-f", "256", "-p", "LRU", "-w", "0"]
-            //"args": ["addrs.txt", "-f", "256", "-p", "LRU", "-w", "1"]
+            "args": ["sequential_addrs.txt", "-f", "20", "-p", "OPT", ">", "out_opt.txt"]
+            //"args": ["sequential_addrs.txt", "-f", "20", "-p", "LRU", ">", "out_lru.txt"]
+            //"args": ["sequential_addrs.txt", "-f", "20", "-p", "FIFO", ">", "out_fifo.txt"]
         }
     ]
 }
