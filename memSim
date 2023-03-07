@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from optparse import OptionParser
 from collections import deque
 from typing import Optional, List
