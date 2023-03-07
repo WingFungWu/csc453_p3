@@ -1,15 +1,12 @@
 from optparse import OptionParser
 from collections import deque
 from typing import Optional, List
-import random
-import sys
+from random import randint
+from time import time
+import csv
 
 def mask_logical_addr(addr: int):
     return (addr >> 8), (addr & 0xff)
-
-# def get_byte_referenced(frame: bytes, offset: int):
-#     byte_referenced = -(256-frame[offset]) if frame[offset] >= 128 else frame[offset]
-#     return byte_referenced
 
 def read_physical_memory(frame_num: int, frame_size=256):
     with open("BACKING_STORE.bin", "rb") as file:
@@ -62,7 +59,7 @@ class RDCache:
         if key in self.cache:
             self.queue.remove(key)
         elif len(self.cache) == self.capacity:
-            ranNum = random.randint(0, self.capacity-1)
+            ranNum = randint(0, self.capacity-1)
             old = self.queue.pop(ranNum)
             del self.cache[old]
         self.cache[key] = value
@@ -143,6 +140,7 @@ class VirtualMemory:
         self.page_faults = 0
         self.page_lookups = 0
         self.page_number = -1
+        self.access_time = {}
     
     def translate_virtual_addr(self, logical_addr: int):
         self.lookups += 1
@@ -162,7 +160,7 @@ class VirtualMemory:
 
     def page_table_lookup(self, page_number: int):
         self.page_lookups += 1
-        
+        self.access_time[time()] = page_number
         page = self.tlb_lookup(page_number)
         if not page:
             page = self.page_table.get(page_number)
@@ -190,6 +188,7 @@ def main():
     parser = OptionParser()
     parser.add_option("-f","--frames", default=256, help="memSim frames to use: an integer <= 256 and > 0", action="store", type="int", dest="frames")
     parser.add_option("-p","--PRA", default="FIFO", help="memSim page replacement algorithms to use: FIFO, LRU, OPT, RD", action="store", type="string", dest="pra")
+    parser.add_option("-v", default=-1, help="memSim visualization", action="store", type="int", dest="visual")
     (option, args) = parser.parse_args()
     if not len(args):
         print("No Input Detected")
@@ -214,6 +213,12 @@ def main():
         print("Incorrect <reference-sequence-file.txt> Detected")
         return
     
+    if not option.visual:
+        with open('vm.csv', 'w', newline='') as out_file:
+            writer = csv.writer(out_file)
+            writer.writerow(["time", "page_number"])
+            for time in vm.access_time:
+                writer.writerow([time, vm.access_time[time]])
 
 if __name__ == '__main__':
     main()
