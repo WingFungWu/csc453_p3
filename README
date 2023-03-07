@@ -5,3 +5,29 @@ To run memSim:
 ./memSim <reference-sequence-file.txt> -f <FRAMES> -p <PRA>
 or
 ./memSim <reference-sequence-file.txt> -p <PRA> -f <FRAMES>
+
+
+Extra test case (discussed with professor):
+w
+
+Extra credit: 
+We implemented the Random algorithm to randomly pick the frame to swap and the result is worse than FIFO in some case
+and some will have the same behavior as FIFO
+FIFO
+python3 memSim.py addrs.txt -p FIFO -f 16 | tail -6 
+Number of Translated Addresses = 38400
+Page Faults = 38368
+Page Fault Rate = 0.999
+TLB Hits = 21
+TLB Misses = 38379
+TLB Hit Rate = 0.001
+
+RD
+python3 memSim.py addrs.txt -p RD -f 16 | tail -6 
+Number of Translated Addresses = 38400
+Page Faults = 38369
+Page Fault Rate = 0.999
+TLB Hits = 19
+TLB Misses = 38381
+TLB Hit Rate = 0.000
+

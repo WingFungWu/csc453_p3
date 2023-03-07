@@ -200,13 +200,13 @@ def main():
     
     pra = option.pra
     pra = "FIFO" if pra not in ["FIFO", "OPT", "LRU", "RD"] else pra
-    
+
     try:
         with open(args[0], "r") as in_file:
             virtual_addresses = in_file.read().split()
             virtual_addresses = [int(addr) for addr in virtual_addresses]
         future_accesses = [mask_logical_addr(addr)[0] for addr in virtual_addresses]
-        vm = VirtualMemory(option.pra, option.frames, future_accesses)
+        vm = VirtualMemory(pra, frames, future_accesses)
         for addr in virtual_addresses:
             vm.translate_virtual_addr(addr)
         vm.print_stat()
